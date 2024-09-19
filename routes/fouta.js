@@ -5,18 +5,41 @@ const Subcategory = require('../models/Subcategory');
 const SubModel = require('../models/SubModel');
 const Category = require('../models/Category');
 
-router.get('/name/:subcategoryName', async (req, res) => {
+
+
+// Updated Route to Fetch Submodels and Foutas
+//submodelFouta
+router.get('/submodels-and-fouta/:categoryName/:subcategoryName', async (req, res) => {
   try {
-    const subcategory = await Subcategory.findOne({ name: req.params.subcategoryName });
+    const { categoryName, subcategoryName } = req.params;
+
+    // Find the category by name
+    const category = await Category.findOne({ name: categoryName });
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Find the subcategory by name and category
+    const subcategory = await Subcategory.findOne({
+      name: subcategoryName,
+      parentCategoryId: category._id,
+    });
+
     if (!subcategory) {
       return res.status(404).json({ message: 'Subcategory not found' });
     }
+
+    // Fetch foutas and submodels
     const foutas = await Fouta.find({ subcategoryId: subcategory._id });
-    res.json(foutas);
+    const submodels = await SubModel.find({ parentSubcategoryId: subcategory._id });
+
+    res.json({ foutas, submodels });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching foutas', error });
+    console.error('Error fetching submodels and fouta details:', error);
+    res.status(500).json({ message: 'Error fetching submodels and fouta details', error });
   }
 });
+
 
 //  get submodels and fouta details by subcategory name
 router.get('/submodels-and-fouta/:subcategoryName', async (req, res) => {
@@ -36,11 +59,15 @@ router.get('/submodels-and-fouta/:subcategoryName', async (req, res) => {
     res.status(500).json({ message: 'Error fetching submodels and fouta details', error });
   }
 });
-// similarProducts
+
+
+// Suggest similar subcategories by category name
+  //submodelFoutaDetails
+
 router.get('/category/:categoryName', async (req, res) => {
   try {
-    const { excludeFoutaId, excludeSubcategoryId, excludeSubmodelId } = req.query;
-
+    const { excludeFoutaId } = req.query;
+ 
     // Find the category by its name
     const category = await Category.findOne({ name: req.params.categoryName });
     if (!category) {
@@ -54,42 +81,25 @@ router.get('/category/:categoryName', async (req, res) => {
       return res.status(404).json({ message: 'No subcategories found for this category' });
     }
 
-    // Extract the subcategory IDs
-    const subcategoryIds = subcategories.map(subcategory => subcategory._id);
+    // Filter out the subcategories based on exclusion criteria
+    let filteredSubcategories = subcategories;
 
-    // Build the query to find foutas
-    const query = { subcategoryId: { $in: subcategoryIds } };
-
-    // Exclude the current Fouta
+    // Exclude subcategories that contain the excluded Fouta
     if (excludeFoutaId) {
-      query._id = { $ne: excludeFoutaId };
+      const fouta = await Fouta.findById(excludeFoutaId);
+      if (fouta && fouta.subcategoryId) {
+        filteredSubcategories = filteredSubcategories.filter(subcategory => subcategory._id.toString() !== fouta.subcategoryId.toString());
+      }
     }
 
-    // Exclude Foutas from the same subcategory
-    if (excludeSubcategoryId) {
-      query.subcategoryId = { $ne: excludeSubcategoryId };
-    }
-
-    // Exclude Foutas from the same submodel
-    if (excludeSubmodelId) {
-      // Fetch submodels belonging to the excluded submodelId
-      const submodels = await SubModel.find({ parentSubcategoryId: excludeSubmodelId });
-      const submodelIds = submodels.map(submodel => submodel._id);
-      query.submodelId = { $nin: submodelIds };
-    }
-
-    const foutas = await Fouta.find(query);
-
-    if (!foutas || foutas.length === 0) {
-      return res.status(404).json({ message: 'No foutas found for this category' });
-    }
-
-    res.json(foutas);
+    res.json(filteredSubcategories);
   } catch (error) {
-    console.error('Error fetching foutas by category:', error.message);
-    res.status(500).json({ message: 'Error fetching foutas by category', error: error.message });
+    console.error('Error fetching subcategories by category:', error.message);
+    res.status(500).json({ message: 'Error fetching subcategories by category', error: error.message });
   }
 });
+
+//devisForm
 router.get('/ids/:ids', async (req, res) => {
   try {
     const ids = req.params.ids.split(','); // Assuming IDs are passed as a comma-separated string
@@ -97,6 +107,33 @@ router.get('/ids/:ids', async (req, res) => {
     res.json(foutas);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching foutas', error });
+  }
+});
+
+
+router.post('/add', async (req, res) => {
+  try {
+    const { name, description, title, ref, dimensions, images, subcategoryId } = req.body;
+
+    // Ensure dimensions and images are arrays
+    const formattedDimensions = Array.isArray(dimensions) ? dimensions : dimensions.split(',').map(d => d.trim());
+    const formattedImages = Array.isArray(images) ? images : images.split(',').map(i => i.trim());
+
+    const newFouta = new Fouta({
+      name,
+      description,
+      title,
+      ref,
+      dimensions: formattedDimensions,
+      images: formattedImages,
+      subcategoryId
+    });
+
+    const savedFouta = await newFouta.save();
+    res.status(201).json(savedFouta);
+  } catch (error) {
+    console.error('Error adding fouta:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

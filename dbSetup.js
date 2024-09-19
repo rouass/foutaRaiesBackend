@@ -1,52 +1,43 @@
 const mongoose = require('mongoose');
 const Fouta = require('./models/Fouta');
 
-mongoose
-  .connect("mongodb+srv://rouasoussou:9iMbwrwGAiMaYuPs@fouta.hr6pd.mongodb.net/",
-  { useNewUrlParser: true, useUnifiedTopology: true }
-  )
-  .then(() => {
-    console.log("Connected to database!");
-   })
+const mongoURI = 'mongodb+srv://rouasoussou:9iMbwrwGAiMaYuPs@fouta.hr6pd.mongodb.net/'; // replace with your MongoDB URI
 
-  .catch((err) => {
-    console.error("Connection failed:", err);
-  });
-
-async function updateDatabase() {
+async function insertFoutas() {
   try {
-    // Find all Fouta documents
-    const foutas = await Fouta.find();
+    // Connect to MongoDB
+    await mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log('Connected to MongoDB');
 
-    for (const fouta of foutas) {
-      // 1. Remove the 'colors' field
-      if (fouta.colors) {
-        fouta.colors = undefined;
+    // Create and insert Foutas
+    const foutasData = [
+    
+      {
+        name: "Foula",
+        description: "Striped waffle-textured fouta.",
+        title: "Foula Fouta",
+        ref: "FOU-BANDEB-001",
+        dimension: "100x200 cm",
+        colors: [
+          { name: "Yellow", images: ["../../assets/3I3A2719.JPG"] },
+          { name: "Green", images: ["../../assets/3I3A2768.JPG"] }
+        ],
+        image: "../../assets/3I3A2620.JPG",
+        // subcategoryId: "66db5eb037135aa72b5213c6", 
       }
+    ];
 
-      // 2. Convert 'dimension' string to an array 'dimensions'
-      if (typeof fouta.dimension === 'string') {
-        fouta.dimensions = [fouta.dimension]; // Convert to array
-        fouta.dimension = undefined; // Remove old 'dimension' field
-      }
-
-      // 3. Move 'image' to 'images' array
-      if (fouta.image) {
-        fouta.images = fouta.images || [];
-        fouta.images.push(fouta.image); // Add existing image to images array
-        fouta.image = undefined; // Remove old 'image' field
-      }
-
-      // Save the updated document
+    for (const foutaData of foutasData) {
+      const fouta = new Fouta(foutaData);
       await fouta.save();
     }
 
-    console.log('Database update complete.');
+    console.log('Foutas inserted successfully');
+    mongoose.disconnect();
   } catch (error) {
-    console.error('Error updating database:', error);
-  } finally {
-    mongoose.connection.close();
+    console.error('Error inserting foutas:', error);
+    mongoose.disconnect();
   }
 }
 
-updateDatabase();
+insertFoutas();

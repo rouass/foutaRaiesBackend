@@ -1,12 +1,15 @@
 const mongoose = require('mongoose');
-
 const selectedFoutaSchema = new mongoose.Schema({
     fouta: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Fouta',
         required: true,
     },
-    name: {  // Add name field
+    name: {
+        type: String,
+        required: true,
+    },
+    dimension: {  
         type: String,
         required: true,
     },

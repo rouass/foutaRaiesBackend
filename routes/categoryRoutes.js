@@ -3,6 +3,7 @@ const router = express.Router();
 const Category = require('../models/Category');
 const Subcategory= require('../models/Subcategory');
 
+//foutadetails
 router.get('/', async(req ,res) => {
         try {
           const categories = await Category.find({});
@@ -14,15 +15,19 @@ router.get('/', async(req ,res) => {
 
 
 //  fetch categories with their subcategories
+//navbar
 router.get('/categwithSub', async (req, res) => {
-
   try {
-    const categories = await Category.find().lean();
+    // Fetch categories with only the _id and name fields
+    const categories = await Category.find({}, '_id name').lean();
+
     if (!categories || categories.length === 0) {
       return res.status(404).json({ message: 'No categories found in the database' });
     }
 
-    const subcategories = await Subcategory.find().lean();
+    // Fetch subcategories with only the _id, name, and parentCategoryId fields
+    const subcategories = await Subcategory.find({}, '_id name parentCategoryId').lean();
+
     if (!subcategories || subcategories.length === 0) {
       console.warn('No subcategories found, returning categories without subcategories.');
     }
@@ -43,7 +48,7 @@ router.get('/categwithSub', async (req, res) => {
   }
 });
 
-
+//category-details
 router.get('/:name', async (req, res) => {
   try {
     const category = await Category.findOne({ name: req.params.name });
@@ -54,20 +59,18 @@ router.get('/:name', async (req, res) => {
   }
 });
 
-
-// get category by subcategory name
-router.get('/category-by-subcategory/:subcategoryName', async (req, res) => {
+//submodelFoutaDetails
+router.get('/category-by-id/:id', async (req, res) => {
   try {
-    const subcategory = await Subcategory.findOne({ name: req.params.subcategoryName }).lean();
-    if (!subcategory) return res.status(404).json({ message: 'Subcategory not found' });
-
-    const category = await Category.findById(subcategory.parentCategoryId).lean();
-    if (!category) return res.status(404).json({ message: 'Category not found' });
-
-    res.json(category);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    const category = await Category.findById(req.params.id).lean();
+    if (!category) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+    res.status(200).json(category);
+  } catch (error) {
+    res.status(500).json({ message: 'Error retrieving category', error });
   }
 });
+
 
 module.exports = router;
