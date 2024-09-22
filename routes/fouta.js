@@ -63,11 +63,12 @@ router.get('/submodels-and-fouta/:subcategoryName', async (req, res) => {
 
 // Suggest similar subcategories by category name
   //submodelFoutaDetails
-
+// Suggest similar subcategories by category name
+// submodelFoutaDetails
 router.get('/category/:categoryName', async (req, res) => {
   try {
     const { excludeFoutaId } = req.query;
- 
+
     // Find the category by its name
     const category = await Category.findOne({ name: req.params.categoryName });
     if (!category) {
@@ -92,13 +93,23 @@ router.get('/category/:categoryName', async (req, res) => {
       }
     }
 
-    res.json(filteredSubcategories);
+    // Randomly select 5 subcategories from the filtered list
+    const getRandomSubcategories = (subcategories, size) => {
+      const shuffled = subcategories.sort(() => 0.5 - Math.random()); // Shuffle array
+      return shuffled.slice(0, size); // Return 5 random subcategories
+    };
+
+    const randomSubcategories = getRandomSubcategories(filteredSubcategories, 5);
+
+    res.json(randomSubcategories);
   } catch (error) {
     console.error('Error fetching subcategories by category:', error.message);
     res.status(500).json({ message: 'Error fetching subcategories by category', error: error.message });
   }
 });
 
+  
+  
 //devisForm
 router.get('/ids/:ids', async (req, res) => {
   try {

@@ -5,10 +5,6 @@ const selectedFoutaSchema = new mongoose.Schema({
         ref: 'Fouta',
         required: true,
     },
-    name: {
-        type: String,
-        required: true,
-    },
     dimension: {  
         type: String,
         required: true,

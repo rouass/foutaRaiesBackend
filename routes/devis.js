@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Devis = require('../models/deviss');
 const Fouta = require('../models/Fouta');
+const checkAuth = require('../middleware/check-user');
 
 router.post('/', async (req, res) => {
     try {
@@ -36,4 +37,93 @@ router.post('/', async (req, res) => {
     }
 });
 
+router.get('/list-devis', checkAuth, async (req, res) => {
+  if (req.userData.role !== 'admin') {
+      return res.status(403).json({ message: "Access denied: Only admins can view this." });
+  }
+
+  try {
+      const devis = await Devis.find().populate('selectedFoutas.fouta'); // Populate fouta details
+      res.status(200).json({ message: 'Devis fetched successfully', devis });
+  } catch (error) {
+      res.status(500).json({
+          message: "Fetching devis failed!",
+          error: error.message
+      });
+  }
+});
+
+
+const PDFDocument = require('pdfkit');
+
+// Route to generate a PDF for a selected devis
+router.get('/download-pdf/:id', checkAuth, async (req, res) => {
+  if (req.userData.role !== 'admin') {
+    return res.status(403).json({ message: "Access denied: Only admins can view this." });
+  }
+
+  try {
+    const devis = await Devis.findById(req.params.id).populate('selectedFoutas.fouta');
+    if (!devis) {
+      return res.status(404).json({ message: 'Devis not found' });
+    }
+
+    // Create a PDF document
+    const doc = new PDFDocument();
+    let filename = `Devis-${devis._id}.pdf`;
+    filename = encodeURIComponent(filename);
+    
+    // Set headers for PDF download
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/pdf');
+    
+    // Pipe the PDF into the response
+    doc.pipe(res);
+    
+    // Add content to the PDF
+    doc.fontSize(20).text('Devis Details', { align: 'center' });
+    doc.text(`Name: ${devis.name} ${devis.prenom}`);
+    doc.text(`Email: ${devis.email}`);
+    doc.text(`Phone: ${devis.numtel}`);
+    doc.text(`Comments: ${devis.comments}`);
+
+    doc.text('Selected Foutas:', { align: 'left', underline: true });
+    devis.selectedFoutas.forEach(fouta => {
+      doc.text(`Fouta: ${fouta.fouta.name} (Quantity: ${fouta.quantity})`);
+      doc.text(`Dimension: ${fouta.dimension}`);
+      if (fouta.comments) {
+        doc.text(`Comments: ${fouta.comments}`);
+      }
+      doc.moveDown();
+    });
+
+    // Finalize the PDF and end the stream
+    doc.end();
+  } catch (error) {
+    res.status(500).json({ message: "PDF generation failed", error: error.message });
+  }
+});
+
+// Delete a devis by ID
+router.delete('/:id', checkAuth, async (req, res) => {
+  if (req.userData.role !== 'admin') {
+    return res.status(403).json({ message: "Access denied: Only admins can delete devis." });
+  }
+
+  try {
+    const devisId = req.params.id;
+    const deletedDevis = await Devis.findByIdAndDelete(devisId);
+
+    if (!deletedDevis) {
+      return res.status(404).json({ message: "Devis not found!" });
+    }
+
+    res.status(200).json({ message: "Devis deleted successfully!" });
+  } catch (error) {
+    res.status(500).json({ message: "Deleting devis failed!", error: error.message });
+  }
+});
+
+
+  
 module.exports = router;
