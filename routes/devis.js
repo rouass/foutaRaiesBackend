@@ -56,7 +56,6 @@ router.get('/list-devis', checkAuth, async (req, res) => {
 
 const PDFDocument = require('pdfkit');
 
-// Route to generate a PDF for a selected devis
 router.get('/download-pdf/:id', checkAuth, async (req, res) => {
   if (req.userData.role !== 'admin') {
     return res.status(403).json({ message: "Access denied: Only admins can view this." });
@@ -68,19 +67,15 @@ router.get('/download-pdf/:id', checkAuth, async (req, res) => {
       return res.status(404).json({ message: 'Devis not found' });
     }
 
-    // Create a PDF document
     const doc = new PDFDocument();
     let filename = `Devis-${devis._id}.pdf`;
     filename = encodeURIComponent(filename);
     
-    // Set headers for PDF download
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', 'application/pdf');
     
-    // Pipe the PDF into the response
     doc.pipe(res);
     
-    // Add content to the PDF
     doc.fontSize(20).text('Devis Details', { align: 'center' });
     doc.text(`Name: ${devis.name} ${devis.prenom}`);
     doc.text(`Email: ${devis.email}`);
@@ -97,14 +92,12 @@ router.get('/download-pdf/:id', checkAuth, async (req, res) => {
       doc.moveDown();
     });
 
-    // Finalize the PDF and end the stream
     doc.end();
   } catch (error) {
     res.status(500).json({ message: "PDF generation failed", error: error.message });
   }
 });
 
-// Delete a devis by ID
 router.delete('/:id', checkAuth, async (req, res) => {
   if (req.userData.role !== 'admin') {
     return res.status(403).json({ message: "Access denied: Only admins can delete devis." });

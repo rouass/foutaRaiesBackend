@@ -1,4 +1,3 @@
-// models/Subcategory.js
 const mongoose = require('mongoose');
 
 const subcategorySchema = new mongoose.Schema({
@@ -10,7 +9,7 @@ const subcategorySchema = new mongoose.Schema({
     type: String,
   },
   image: {
-    type: String, // URL to subcategory image
+    type: String, 
   },
   parentCategoryId: {
     type: mongoose.Schema.Types.ObjectId,

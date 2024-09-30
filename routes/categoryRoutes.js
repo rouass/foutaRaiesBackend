@@ -18,14 +18,12 @@ router.get('/', async(req ,res) => {
 //navbar
 router.get('/categwithSub', async (req, res) => {
   try {
-    // Fetch categories with only the _id and name fields
     const categories = await Category.find({}, '_id name').lean();
 
     if (!categories || categories.length === 0) {
       return res.status(404).json({ message: 'No categories found in the database' });
     }
 
-    // Fetch subcategories with only the _id, name, and parentCategoryId fields
     const subcategories = await Subcategory.find({}, '_id name parentCategoryId').lean();
 
     if (!subcategories || subcategories.length === 0) {
