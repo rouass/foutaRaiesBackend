@@ -6,7 +6,6 @@ const checkAuth = require('../middleware/check-user');
 
 router.post('/', async (req, res) => {
     try {
-        console.log('Received Devis Data:', req.body);
 
         const selectedFoutas = await Promise.all(req.body.selectedFoutas.map(async (item) => {
             const fouta = await Fouta.findById(item.fouta);

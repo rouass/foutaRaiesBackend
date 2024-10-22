@@ -1,4 +1,4 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -14,7 +14,7 @@ mongoose.set("strictQuery", false);
 
 mongoose
   .connect(process.env.MONGO_URI,
-  { useNewUrlParser: true, useUnifiedTopology: true }
+
   )
   .then(() => {
     console.log("Connected to database!");
@@ -51,13 +51,12 @@ const usersRoute = require('./routes/user')
 
 app.use('/api/categories', categoryRoutes);
 app.use('/api/subcategories', subcategoriesRoute);
-app.use('/api/foutas', foutaRoute); 
-app.use('/api/submodels', subModelRoute); 
-app.use('/api/devis', devisRoute); 
-app.use('/api/users', usersRoute); 
+app.use('/api/foutas', foutaRoute);
+app.use('/api/submodels', subModelRoute);
+app.use('/api/devis', devisRoute);
+app.use('/api/users', usersRoute);
 
 
 
 
 module.exports = app;
-

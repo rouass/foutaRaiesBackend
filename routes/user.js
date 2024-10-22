@@ -7,58 +7,50 @@ const rateLimit = require("express-rate-limit");
 const checkauth = require("../middleware/check-user");
 
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 requests per windowMs
+  windowMs: 15 * 60 * 1000, 
+  max: 5, 
   message: "Too many login attempts, please try again later.",
 });
 
-router.post("/login", limiter, (req, res, next) => {
-    let fetchedUser;
-  
-    User.findOne({ phone: req.body.phone })
-      .then((user) => {
-        if (!user) {
-          throw new Error("Incorrect phone or password!");
-        }
-  
-        fetchedUser = user;
-        return bcrypt.compare(req.body.password, user.password);
-      })
-      .then((result) => {
-        if (!result) {
-          throw new Error("Incorrect phone or password!");
-        }
-  
-        const token = jwt.sign(
-          { role: fetchedUser.roles[0] , userId: fetchedUser._id },
-          "secret_this_should_be_longer_secret_this_should_be_longer_",
-          { expiresIn: "1h" }
-        );
-  
-        res.status(200).json({
-          token: token,
-          expiresIn: 3600,
-          userId: fetchedUser._id,
-          userName: fetchedUser.name,
-          userPicture: fetchedUser.imgPath,
-          userRole: fetchedUser.roles[0],
-        });
-      })
-      .catch((err) => {
-        console.error("Authentication error:", err);
-  
-        res.status(401).json({
-          message: "Authentication failed. Incorrect phone or password.",
-        });
-      });
-  });
+router.post("/login", limiter, async (req, res, next) => {
+  try {
+    let fetchedUser = await User.findOne({ phone: req.body.phone });
+
+    if (!fetchedUser) {
+      return res.status(401).json({ message: "Incorrect phone or password!" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(req.body.password, fetchedUser.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Incorrect phone or password!" });
+    }
+
+    const token = jwt.sign(
+      { role: fetchedUser.roles[0], userId: fetchedUser._id },
+      "secret_this_should_be_longer_secret_this_should_be_longer_",
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      token: token,
+      expiresIn: 3600,
+      userId: fetchedUser._id,
+      userName: fetchedUser.name,
+      userPicture: fetchedUser.imgPath,
+      userRole: fetchedUser.roles[0],
+    });
+  } catch (error) {
+    console.error("Authentication error:", error);
+
+    next(error);
+  }
+});
+
 
   router.get("/admin/devis", checkauth, (req, res, next) => {
     if (req.userData.role !== "admin") {
       return res.status(403).json({ message: "Access Denied. Admins only." });
     }
-  
-    // Logic for fetching and returning devis for admin
     Devis.find()
       .then((devisList) => {
         res.status(200).json(devisList);

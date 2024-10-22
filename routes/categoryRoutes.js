@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Category = require('../models/Category');
 const Subcategory= require('../models/Subcategory');
+const mongoose = require('mongoose'); // Add this at the top of the file
 
 //foutadetails
 router.get('/', async(req ,res) => {
@@ -34,7 +35,7 @@ router.get('/categwithSub', async (req, res) => {
       return {
         ...category,
         subcategories: subcategories.filter(
-          (sub) => sub.parentCategoryId.toString() === category._id.toString()
+          (sub) => sub.parentCategoryId && sub.parentCategoryId.toString() === category._id.toString()
         ),
       };
     });
@@ -59,16 +60,22 @@ router.get('/:name', async (req, res) => {
 
 //submodelFoutaDetails
 router.get('/category-by-id/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid category ID' });
+  }
+
   try {
-    const category = await Category.findById(req.params.id).lean();
+    const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
     res.status(200).json(category);
   } catch (error) {
-    res.status(500).json({ message: 'Error retrieving category', error });
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 module.exports = router;
