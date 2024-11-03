@@ -17,7 +17,7 @@ const selectedFoutaSchema = new mongoose.Schema({
         type: String,
     }
 });
-
+.js navigation   
 const devisSchema = new mongoose.Schema({
     name: {
         type: String,

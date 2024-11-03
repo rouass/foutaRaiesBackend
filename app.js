@@ -49,12 +49,12 @@ const subModelRoute = require('./routes/subModel');
 const devisRoute = require('./routes/devis');
 const usersRoute = require('./routes/user')
 
-app.use('/api/categories', categoryRoutes);
-app.use('/api/subcategories', subcategoriesRoute);
-app.use('/api/foutas', foutaRoute);
-app.use('/api/submodels', subModelRoute);
-app.use('/api/devis', devisRoute);
-app.use('/api/users', usersRoute);
+app.use('/categories', categoryRoutes);
+app.use('/subcategories', subcategoriesRoute);
+app.use('/foutas', foutaRoute);
+app.use('/submodels', subModelRoute);
+app.use('/devis', devisRoute);
+app.use('/users', usersRoute);
 
 
 
